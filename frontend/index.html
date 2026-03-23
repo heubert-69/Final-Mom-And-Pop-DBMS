@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>DeliverPH — Fast & Reliable</title>
+<style>
+:root {
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --primary-light: #eff6ff;
+  --success: #16a34a;
+  --success-light: #f0fdf4;
+  --warning: #d97706;
+  --warning-light: #fffbeb;
+  --danger: #dc2626;
+  --danger-light: #fef2f2;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-400: #9ca3af;
+  --gray-600: #4b5563;
+  --gray-800: #1f2937;
+  --white: #ffffff;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--gray-50); color: var(--gray-800); min-height: 100vh; }
+
+/* ── Layout ─────────────────────────────────── */
+.app { max-width: 430px; margin: 0 auto; min-height: 100vh;
+  background: var(--white); position: relative; display: flex; flex-direction: column; }
+
+/* ── Header ─────────────────────────────────── */
+.header { background: var(--white); padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--gray-100); position: sticky; top: 0; z-index: 10;
+  display: flex; align-items: center; justify-content: space-between; }
+.header-logo { display: flex; align-items: center; gap: 8px; }
+.header-logo span { font-size: 22px; }
+.header-logo h1 { font-size: 18px; font-weight: 700; color: var(--primary); }
+.header-user { font-size: 13px; color: var(--gray-600); cursor: pointer;
+  background: var(--gray-100); padding: 6px 12px; border-radius: 20px; border: none; }
+.header-user:hover { background: var(--gray-200); }
+
+/* ── Pages ─────────────────────────────────── */
+.page { flex: 1; display: none; flex-direction: column; overflow-y: auto; }
+.page.active { display: flex; }
+.page-scroll { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 100px; }
+
+/* ── Bottom Nav ─────────────────────────────── */
+.bottom-nav { position: sticky; bottom: 0; background: var(--white);
+  border-top: 1px solid var(--gray-200); display: flex;
+  padding: 8px 0 max(8px, env(safe-area-inset-bottom)); z-index: 10; }
+.nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center;
+  gap: 3px; padding: 8px 4px; border: none; background: none; cursor: pointer;
+  color: var(--gray-400); font-size: 11px; font-weight: 500; transition: all .2s; }
+.nav-btn.active { color: var(--primary); }
+.nav-btn svg { width: 22px; height: 22px; }
+
+/* ── Auth Screen ────────────────────────────── */
+.auth-screen { display: flex; flex-direction: column; min-height: 100vh;
+  background: var(--white); }
+.auth-hero { background: linear-gradient(135deg, var(--primary) 0%, #7c3aed 100%);
+  padding: 60px 24px 40px; text-align: center; color: white; }
+.auth-hero .logo-big { font-size: 48px; margin-bottom: 12px; }
+.auth-hero h2 { font-size: 26px; font-weight: 700; margin-bottom: 6px; }
+.auth-hero p { font-size: 15px; opacity: 0.85; }
+.auth-body { flex: 1; padding: 28px 24px; }
+.auth-tabs { display: flex; gap: 0; margin-bottom: 24px;
+  background: var(--gray-100); border-radius: var(--radius-sm); padding: 3px; }
+.auth-tab { flex: 1; padding: 8px; border: none; background: none; border-radius: 7px;
+  font-size: 14px; font-weight: 500; cursor: pointer; color: var(--gray-600); transition: all .2s; }
+.auth-tab.active { background: var(--white); color: var(--primary); box-shadow: var(--shadow-sm); }
+
+/* ── Form Elements ─────────────────────────── */
+.form-group { margin-bottom: 14px; }
+.form-label { display: block; font-size: 13px; font-weight: 500;
+  color: var(--gray-600); margin-bottom: 6px; }
+.form-input, .form-select { width: 100%; padding: 12px 14px; border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-sm); font-size: 15px; color: var(--gray-800);
+  background: var(--white); outline: none; transition: border-color .2s; }
+.form-input:focus, .form-select:focus { border-color: var(--primary); }
+textarea.form-input { resize: vertical; min-height: 80px; }
+
+/* ── Buttons ────────────────────────────────── */
+.btn { width: 100%; padding: 14px; border: none; border-radius: var(--radius-sm);
+  font-size: 15px; font-weight: 600; cursor: pointer; transition: all .15s; }
+.btn-primary { background: var(--primary); color: var(--white); }
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-primary:active { transform: scale(0.98); }
+.btn-success { background: var(--success); color: var(--white); }
+.btn-danger { background: var(--danger); color: var(--white); }
+.btn-outline { background: transparent; color: var(--primary);
+  border: 1.5px solid var(--primary); }
+.btn-sm { padding: 8px 14px; font-size: 13px; border-radius: 6px; width: auto; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Cards ──────────────────────────────────── */
+.card { background: var(--white); border-radius: var(--radius); border: 1px solid var(--gray-200);
+  padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow-sm); }
+.card-header { display: flex; align-items: flex-start; justify-content: space-between;
+  margin-bottom: 10px; }
+.card-title { font-size: 15px; font-weight: 600; }
+.card-sub { font-size: 13px; color: var(--gray-600); margin-top: 2px; }
+.card-row { display: flex; align-items: center; gap: 6px; font-size: 13px;
+  color: var(--gray-600); margin-top: 6px; }
+.card-row svg { width: 14px; height: 14px; flex-shrink: 0; color: var(--gray-400); }
+
+/* ── Status Badges ──────────────────────────── */
+.badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px;
+  border-radius: 20px; font-size: 12px; font-weight: 600; }
+.badge-pending   { background: var(--warning-light); color: var(--warning); }
+.badge-assigned  { background: var(--primary-light); color: var(--primary); }
+.badge-picked_up { background: #fdf4ff; color: #7c3aed; }
+.badge-in_transit { background: #e0f2fe; color: #0369a1; }
+.badge-delivered { background: var(--success-light); color: var(--success); }
+.badge-cancelled { background: var(--danger-light); color: var(--danger); }
+.badge-available { background: var(--success-light); color: var(--success); }
+.badge-busy      { background: var(--warning-light); color: var(--warning); }
+.badge-offline   { background: var(--gray-100); color: var(--gray-600); }
+
+/* ── Stats Grid ─────────────────────────────── */
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.stat-card { background: var(--gray-50); border-radius: var(--radius-sm);
+  padding: 14px; border: 1px solid var(--gray-200); }
+.stat-num { font-size: 26px; font-weight: 700; color: var(--primary); }
+.stat-label { font-size: 12px; color: var(--gray-600); margin-top: 2px; }
+
+/* ── Progress Steps ─────────────────────────── */
+.progress-steps { display: flex; align-items: center; padding: 16px 0; }
+.step { display: flex; flex-direction: column; align-items: center; flex: 1; }
+.step-dot { width: 28px; height: 28px; border-radius: 50%; display: flex;
+  align-items: center; justify-content: center; font-size: 12px; font-weight: 700;
+  background: var(--gray-200); color: var(--gray-600); z-index: 1; }
+.step-dot.done { background: var(--primary); color: white; }
+.step-dot.current { background: var(--warning); color: white; }
+.step-label { font-size: 10px; color: var(--gray-600); margin-top: 4px; text-align: center; }
+.step-line { flex: 1; height: 2px; background: var(--gray-200); margin: 0 -4px; }
+.step-line.done { background: var(--primary); }
+
+/* ── Section Titles ─────────────────────────── */
+.section-title { font-size: 17px; font-weight: 700; margin-bottom: 14px; }
+.section-header { display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px; }
+
+/* ── Toast ──────────────────────────────────── */
+.toast-container { position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+  z-index: 1000; display: flex; flex-direction: column; gap: 8px;
+  max-width: 390px; width: calc(100% - 32px); pointer-events: none; }
+.toast { padding: 12px 16px; border-radius: var(--radius-sm); font-size: 14px;
+  font-weight: 500; box-shadow: var(--shadow-md); animation: slideDown .3s ease;
+  pointer-events: all; }
+.toast-success { background: var(--success); color: white; }
+.toast-error { background: var(--danger); color: white; }
+.toast-info { background: var(--primary); color: white; }
+@keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* ── Modal ──────────────────────────────────── */
+.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+  z-index: 100; display: none; align-items: flex-end; justify-content: center; }
+.modal-backdrop.open { display: flex; }
+.modal { background: var(--white); border-radius: var(--radius) var(--radius) 0 0;
+  padding: 24px; width: 100%; max-width: 430px; max-height: 90vh; overflow-y: auto; }
+.modal-handle { width: 36px; height: 4px; background: var(--gray-200);
+  border-radius: 2px; margin: 0 auto 20px; }
+.modal-title { font-size: 17px; font-weight: 700; margin-bottom: 20px; }
+
+/* ── Empty State ────────────────────────────── */
+.empty { text-align: center; padding: 48px 24px; color: var(--gray-600); }
+.empty-icon { font-size: 48px; margin-bottom: 12px; }
+.empty p { font-size: 15px; }
+
+/* ── Loading ─────────────────────────────────── */
+.loader { display: flex; align-items: center; justify-content: center; padding: 48px; }
+.spinner { width: 28px; height: 28px; border: 3px solid var(--gray-200);
+  border-top-color: var(--primary); border-radius: 50%;
+  animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Role Selector ─────────────────────────── */
+.role-select { display: flex; gap: 8px; margin-bottom: 14px; }
+.role-opt { flex: 1; padding: 10px; border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-sm); text-align: center; cursor: pointer;
+  font-size: 13px; font-weight: 500; transition: all .2s; }
+.role-opt.selected { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
+.role-opt .role-icon { font-size: 20px; display: block; margin-bottom: 4px; }
+
+/* ── Misc ───────────────────────────────────── */
+.divider { border: none; border-top: 1px solid var(--gray-100); margin: 16px 0; }
+.flex { display: flex; }
+.flex-between { display: flex; justify-content: space-between; align-items: center; }
+.gap-2 { gap: 8px; }
+.mt-2 { margin-top: 8px; }
+.text-sm { font-size: 13px; }
+.text-muted { color: var(--gray-600); }
+.font-bold { font-weight: 700; }
+</style>
+</head>
+<body>
+
+<div class="toast-container" id="toasts"></div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- AUTH SCREEN                               -->
+<!-- ══════════════════════════════════════════ -->
+<div class="auth-screen" id="authScreen">
+  <div class="auth-hero">
+    <div class="logo-big">🚚</div>
+    <h2>DeliverPH</h2>
+    <p>Fast, reliable delivery at your fingertips</p>
+  </div>
+  <div class="auth-body">
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuthTab('login')">Login</button>
+      <button class="auth-tab" onclick="switchAuthTab('register')">Register</button>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="loginForm">
+      <div class="form-group">
+        <label class="form-label">Email address</label>
+        <input class="form-input" type="email" id="loginEmail" placeholder="you@example.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" type="password" id="loginPassword" placeholder="••••••••">
+      </div>
+      <button class="btn btn-primary" onclick="doLogin()">Sign in</button>
+      <p class="text-sm text-muted mt-2" style="text-align:center">
+        Default admin: admin@delivery.com / admin123
+      </p>
+    </div>
+
+    <!-- REGISTER -->
+    <div id="registerForm" style="display:none">
+      <div class="form-group">
+        <label class="form-label">Full name</label>
+        <input class="form-input" type="text" id="regName" placeholder="Maria Santos">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email address</label>
+        <input class="form-input" type="email" id="regEmail" placeholder="you@example.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" type="password" id="regPassword" placeholder="Min 6 characters">
+      </div>
+      <div class="form-group">
+        <label class="form-label">I am a...</label>
+        <div class="role-select">
+          <div class="role-opt selected" data-role="customer" onclick="selectRole(this)">
+            <span class="role-icon">👤</span>Customer
+          </div>
+          <div class="role-opt" data-role="driver" onclick="selectRole(this)">
+            <span class="role-icon">🚚</span>Driver
+          </div>
+        </div>
+      </div>
+      <div id="vehicleGroup" style="display:none">
+        <div class="form-group">
+          <label class="form-label">Vehicle type</label>
+          <select class="form-select" id="regVehicle">
+            <option value="motorcycle">Motorcycle</option>
+            <option value="bicycle">Bicycle</option>
+            <option value="car">Car</option>
+            <option value="van">Van</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">License plate</label>
+          <input class="form-input" type="text" id="regPlate" placeholder="ABC 1234">
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="doRegister()">Create account</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- MAIN APP                                  -->
+<!-- ══════════════════════════════════════════ -->
+<div class="app" id="mainApp" style="display:none">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-logo">
+      <span>🚚</span>
+      <h1>DeliverPH</h1>
+    </div>
+    <button class="header-user" onclick="logout()" id="userBadge">Logout</button>
+  </div>
+
+  <!-- Pages -->
+  <!-- HOME -->
+  <div class="page active" id="pageHome">
+    <div class="page-scroll" id="homeContent"></div>
+  </div>
+
+  <!-- ORDERS -->
+  <div class="page" id="pageOrders">
+    <div class="page-scroll" id="ordersContent"></div>
+  </div>
+
+  <!-- PLACE ORDER -->
+  <div class="page" id="pagePlace">
+    <div class="page-scroll">
+      <div class="section-title">Place New Order</div>
+      <div class="form-group">
+        <label class="form-label">Pickup address</label>
+        <input class="form-input" id="pPickup" placeholder="123 Market St, Manila">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Dropoff address</label>
+        <input class="form-input" id="pDropoff" placeholder="456 Rizal Ave, Quezon City">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Package description</label>
+        <textarea class="form-input" id="pDesc" placeholder="Documents, fragile items..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Amount (₱)</label>
+        <input class="form-input" id="pAmount" type="number" placeholder="150.00" min="0" step="0.01">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Special notes (optional)</label>
+        <input class="form-input" id="pNotes" placeholder="Handle with care">
+      </div>
+      <button class="btn btn-primary" onclick="placeOrder()">🚚 Place Order</button>
+    </div>
+  </div>
+
+  <!-- ADMIN / DRIVER PAGE -->
+  <div class="page" id="pageAdmin">
+    <div class="page-scroll" id="adminContent"></div>
+  </div>
+
+  <!-- PROFILE -->
+  <div class="page" id="pageProfile">
+    <div class="page-scroll" id="profileContent"></div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <div class="bottom-nav" id="bottomNav"></div>
+</div>
+
+<!-- Assign Driver Modal -->
+<div class="modal-backdrop" id="assignModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Assign Driver</div>
+    <div id="assignDriverList"></div>
+    <button class="btn btn-outline mt-2" onclick="closeModal()">Cancel</button>
+  </div>
+</div>
+
+<!-- Update Status Modal -->
+<div class="modal-backdrop" id="statusModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Update Delivery Status</div>
+    <div id="statusOptions"></div>
+    <button class="btn btn-outline mt-2" onclick="closeModal()">Cancel</button>
+  </div>
+</div>
+
+<script>
+// ── State ───────────────────────────────────────────────────
+const API = '/api';
+let authToken = localStorage.getItem('dms_token');
+let currentUser = JSON.parse(localStorage.getItem('dms_user') || 'null');
+let currentPage = 'home';
+let modalData = {};
+
+// ── Toast ───────────────────────────────────────────────────
+function toast(msg, type='info') {
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.textContent = msg;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+// ── API helpers ─────────────────────────────────────────────
+async function api(method, path, body=null, auth=true) {
+  const opts = { method, headers: {'Content-Type': 'application/json'} };
+  if (auth && authToken) opts.headers['Authorization'] = `Bearer ${authToken}`;
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(API + path, opts);
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.detail || 'Request failed');
+  return data;
+}
+
+// ── Auth ────────────────────────────────────────────────────
+function switchAuthTab(tab) {
+  document.getElementById('loginForm').style.display = tab === 'login' ? '' : 'none';
+  document.getElementById('registerForm').style.display = tab === 'register' ? '' : 'none';
+  document.querySelectorAll('.auth-tab').forEach((t,i) =>
+    t.classList.toggle('active', (i===0) === (tab==='login')));
+}
+
+function selectRole(el) {
+  document.querySelectorAll('.role-opt').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('vehicleGroup').style.display =
+    el.dataset.role === 'driver' ? '' : 'none';
+}
+
+async function doLogin() {
+  try {
+    const data = await api('POST', '/auth/login', {
+      email: document.getElementById('loginEmail').value,
+      password: document.getElementById('loginPassword').value,
+    }, false);
+    authToken = data.access_token;
+    currentUser = { user_id: data.user_id, role: data.role, name: data.name };
+    localStorage.setItem('dms_token', authToken);
+    localStorage.setItem('dms_user', JSON.stringify(currentUser));
+    initApp();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function doRegister() {
+  const role = document.querySelector('.role-opt.selected')?.dataset.role || 'customer';
+  try {
+    await api('POST', '/auth/register', {
+      name: document.getElementById('regName').value,
+      email: document.getElementById('regEmail').value,
+      password: document.getElementById('regPassword').value,
+      role,
+      vehicle_type: document.getElementById('regVehicle')?.value,
+      license_plate: document.getElementById('regPlate')?.value,
+    }, false);
+    toast('Account created! Please login.', 'success');
+    switchAuthTab('login');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function logout() {
+  authToken = null; currentUser = null;
+  localStorage.removeItem('dms_token');
+  localStorage.removeItem('dms_user');
+  document.getElementById('authScreen').style.display = '';
+  document.getElementById('mainApp').style.display = 'none';
+}
+
+// ── App Init ────────────────────────────────────────────────
+function initApp() {
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'flex';
+  document.getElementById('userBadge').textContent =
+    `${currentUser.name.split(' ')[0]} · Logout`;
+  buildNav();
+  navigateTo('home');
+}
+
+function buildNav() {
+  const role = currentUser.role;
+  const navItems = role === 'driver' ? [
+    { id: 'home', icon: homeIcon(), label: 'Home' },
+    { id: 'orders', icon: boxIcon(), label: 'Deliveries' },
+    { id: 'profile', icon: userIcon(), label: 'Profile' },
+  ] : role === 'admin' ? [
+    { id: 'home', icon: homeIcon(), label: 'Home' },
+    { id: 'orders', icon: boxIcon(), label: 'Orders' },
+    { id: 'admin', icon: chartIcon(), label: 'Admin' },
+    { id: 'profile', icon: userIcon(), label: 'Profile' },
+  ] : [
+    { id: 'home', icon: homeIcon(), label: 'Home' },
+    { id: 'orders', icon: boxIcon(), label: 'My Orders' },
+    { id: 'place', icon: plusIcon(), label: 'New Order' },
+    { id: 'profile', icon: userIcon(), label: 'Profile' },
+  ];
+
+  document.getElementById('bottomNav').innerHTML = navItems.map(n => `
+    <button class="nav-btn" id="nav-${n.id}" onclick="navigateTo('${n.id}')">
+      ${n.icon}<span>${n.label}</span>
+    </button>
+  `).join('');
+}
+
+function navigateTo(page) {
+  currentPage = page;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  const pg = document.getElementById('page' + cap(page));
+  if (pg) pg.classList.add('active');
+  const nb = document.getElementById('nav-' + page);
+  if (nb) nb.classList.add('active');
+  loadPage(page);
+}
+
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+// ── Page Loaders ─────────────────────────────────────────────
+async function loadPage(page) {
+  if (page === 'home') loadHome();
+  else if (page === 'orders') loadOrders();
+  else if (page === 'admin') loadAdmin();
+  else if (page === 'profile') loadProfile();
+}
+
+// ── HOME PAGE ───────────────────────────────────────────────
+async function loadHome() {
+  const el = document.getElementById('homeContent');
+  el.innerHTML = '<div class="loader"><div class="spinner"></div></div>';
+  const role = currentUser.role;
+
+  if (role === 'admin') {
+    try {
+      const a = await api('GET', '/admin/analytics');
+      el.innerHTML = `
+        <div class="section-title">Dashboard</div>
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-num">${a.total_orders}</div><div class="stat-label">Total Orders</div></div>
+          <div class="stat-card"><div class="stat-num" style="color:var(--warning)">${a.pending_orders}</div><div class="stat-label">Pending</div></div>
+          <div class="stat-card"><div class="stat-num" style="color:#0369a1">${a.in_transit_orders}</div><div class="stat-label">In Transit</div></div>
+          <div class="stat-card"><div class="stat-num" style="color:var(--success)">${a.delivered_orders}</div><div class="stat-label">Delivered</div></div>
+          <div class="stat-card"><div class="stat-num">${a.total_drivers}</div><div class="stat-label">Total Drivers</div></div>
+          <div class="stat-card"><div class="stat-num" style="color:var(--success)">${a.available_drivers}</div><div class="stat-label">Available</div></div>
+          <div class="stat-card"><div class="stat-num">${a.total_customers}</div><div class="stat-label">Customers</div></div>
+          <div class="stat-card"><div class="stat-num" style="color:var(--primary)">${a.avg_delivery_minutes ? a.avg_delivery_minutes.toFixed(0)+'m' : 'N/A'}</div><div class="stat-label">Avg Delivery</div></div>
+        </div>
+        <div class="section-title mt-2">Quick Actions</div>
+        <button class="btn btn-primary" style="margin-bottom:10px" onclick="navigateTo('orders')">📦 Manage Orders</button>
+        <button class="btn btn-outline" onclick="navigateTo('admin')">👥 Manage Drivers & Users</button>
+      `;
+    } catch(e) { el.innerHTML = `<div class="empty"><p>${e.message}</p></div>`; }
+
+  } else if (role === 'driver') {
+    try {
+      const deliveries = await api('GET', '/deliveries/my');
+      const active = deliveries.filter(d => !['delivered','failed'].includes(d.status));
+      el.innerHTML = `
+        <div class="section-title">My Dashboard</div>
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-num">${deliveries.length}</div><div class="stat-label">Total Deliveries</div></div>
+          <div class="stat-card"><div class="stat-num" style="color:var(--warning)">${active.length}</div><div class="stat-label">Active</div></div>
+        </div>
+        ${active.length > 0 ? `
+          <div class="section-title">Active Deliveries</div>
+          ${active.map(d => deliveryCard(d, true)).join('')}
+        ` : '<div class="empty"><div class="empty-icon">✅</div><p>No active deliveries</p></div>'}
+      `;
+    } catch(e) { el.innerHTML = `<div class="empty"><p>${e.message}</p></div>`; }
+
+  } else {
+    // Customer
+    try {
+      const orders = await api('GET', '/orders');
+      const recent = orders.slice(0, 3);
+      const active = orders.filter(o => !['delivered','cancelled'].includes(o.status));
+      el.innerHTML = `
+        <div class="section-title">Welcome, ${currentUser.name.split(' ')[0]}! 👋</div>
+        <button class="btn btn-primary" style="margin-bottom:20px" onclick="navigateTo('place')">🚚 Place New Order</button>
+        ${active.length > 0 ? `
+          <div class="section-title">Active Orders</div>
+          ${active.map(o => orderCard(o, false)).join('')}
+        ` : ''}
+        ${recent.length > 0 ? `
+          <div class="section-header">
+            <div class="section-title" style="margin:0">Recent Orders</div>
+            <button class="btn btn-sm btn-outline" onclick="navigateTo('orders')">See all</button>
+          </div>
+          ${recent.map(o => orderCard(o)).join('')}
+        ` : '<div class="empty"><div class="empty-icon">📦</div><p>No orders yet</p></div>'}
+      `;
+    } catch(e) { el.innerHTML = `<div class="empty"><p>${e.message}</p></div>`; }
+  }
+}
+
+// ── ORDERS PAGE ──────────────────────────────────────────────
+async function loadOrders() {
+  const el = document.getElementById('ordersContent');
+  el.innerHTML = '<div class="loader"><div class="spinner"></div></div>';
+  try {
+    const role = currentUser.role;
+    let orders;
+    if (role === 'driver') {
+      const deliveries = await api('GET', '/deliveries/my');
+      el.innerHTML = `
+        <div class="section-title">My Deliveries</div>
+        ${deliveries.length === 0
+          ? '<div class="empty"><div class="empty-icon">🚚</div><p>No deliveries assigned</p></div>'
+          : deliveries.map(d => deliveryCard(d, true)).join('')}
+      `;
+      return;
+    }
+    orders = await api('GET', '/orders');
+    el.innerHTML = `
+      <div class="section-header">
+        <div class="section-title" style="margin:0">
+          ${role === 'admin' ? 'All Orders' : 'My Orders'}
+        </div>
+        ${role === 'admin' ? `<button class="btn btn-sm btn-primary" onclick="refreshOrders()">↻ Refresh</button>` : ''}
+      </div>
+      ${orders.length === 0
+        ? '<div class="empty"><div class="empty-icon">📦</div><p>No orders yet</p></div>'
+        : orders.map(o => orderCard(o, role === 'admin')).join('')}
+    `;
+  } catch(e) { el.innerHTML = `<div class="empty"><p>${e.message}</p></div>`; }
+}
+
+function refreshOrders() { loadOrders(); }
+
+// ── ADMIN PAGE ───────────────────────────────────────────────
+async function loadAdmin() {
+  const el = document.getElementById('adminContent');
+  el.innerHTML = '<div class="loader"><div class="spinner"></div></div>';
+  try {
+    const [drivers, users] = await Promise.all([
+      api('GET', '/drivers'),
+      api('GET', '/admin/users'),
+    ]);
+    el.innerHTML = `
+      <div class="section-title">Drivers (${drivers.length})</div>
+      ${drivers.map(d => `
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">🚚 ${d.name}</div>
+              <div class="card-sub">${d.email} · ${d.vehicle_type}</div>
+            </div>
+            <span class="badge badge-${d.availability_status}">${d.availability_status}</span>
+          </div>
+          <div class="flex-between text-sm text-muted">
+            <span>Deliveries: ${d.total_deliveries}</span>
+            <span>Rating: ⭐ ${d.rating}</span>
+          </div>
+        </div>
+      `).join('')}
+
+      <hr class="divider">
+      <div class="section-title">All Users (${users.length})</div>
+      ${users.map(u => `
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">${roleEmoji(u.role)} ${u.name}</div>
+              <div class="card-sub">${u.email}</div>
+            </div>
+            <div style="text-align:right">
+              <span class="badge badge-${u.role === 'admin' ? 'assigned' : u.role === 'driver' ? 'in_transit' : 'available'}">${u.role}</span><br>
+              <button class="btn btn-sm ${u.is_active ? 'btn-danger' : 'btn-success'} mt-2"
+                onclick="toggleUser(${u.id})">
+                ${u.is_active ? 'Deactivate' : 'Activate'}
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join('')}
+    `;
+  } catch(e) { el.innerHTML = `<div class="empty"><p>${e.message}</p></div>`; }
+}
+
+async function toggleUser(uid) {
+  try {
+    await api('PATCH', `/admin/users/${uid}/toggle`);
+    toast('User status updated', 'success');
+    loadAdmin();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── PROFILE PAGE ─────────────────────────────────────────────
+function loadProfile() {
+  const el = document.getElementById('profileContent');
+  el.innerHTML = `
+    <div style="text-align:center; padding: 32px 0 24px">
+      <div style="width:80px;height:80px;border-radius:50%;background:var(--primary-light);
+        display:flex;align-items:center;justify-content:center;margin:0 auto 12px;
+        font-size:32px">${roleEmoji(currentUser.role)}</div>
+      <div style="font-size:20px;font-weight:700">${currentUser.name}</div>
+      <div class="badge badge-${currentUser.role === 'admin' ? 'assigned' : 'available'} mt-2">${currentUser.role}</div>
+    </div>
+    <hr class="divider">
+    <div class="card">
+      <div class="flex-between mt-2">
+        <span class="text-muted text-sm">User ID</span>
+        <span class="font-bold">#${currentUser.user_id}</span>
+      </div>
+      <div class="flex-between mt-2">
+        <span class="text-muted text-sm">Role</span>
+        <span class="font-bold">${currentUser.role}</span>
+      </div>
+    </div>
+    <button class="btn btn-danger" style="margin-top:16px" onclick="logout()">Sign Out</button>
+  `;
+}
+
+// ── PLACE ORDER ──────────────────────────────────────────────
+async function placeOrder() {
+  try {
+    const data = await api('POST', '/orders', {
+      pickup_address: document.getElementById('pPickup').value,
+      dropoff_address: document.getElementById('pDropoff').value,
+      package_desc: document.getElementById('pDesc').value || null,
+      total_amount: parseFloat(document.getElementById('pAmount').value) || 0,
+      notes: document.getElementById('pNotes').value || null,
+    });
+    toast(`Order #${data.id} placed!`, 'success');
+    ['pPickup','pDropoff','pDesc','pAmount','pNotes'].forEach(id =>
+      document.getElementById(id).value = '');
+    navigateTo('orders');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── ORDER CARD ───────────────────────────────────────────────
+function orderCard(o, isAdmin=false) {
+  const steps = ['pending','assigned','picked_up','in_transit','delivered'];
+  const si = steps.indexOf(o.status);
+  return `
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Order #${o.id}</div>
+          <div class="card-sub">${fmtDate(o.created_at)}</div>
+        </div>
+        <span class="badge badge-${o.status}">${o.status.replace('_',' ')}</span>
+      </div>
+      <div class="card-row">${pinIcon()} ${o.pickup_address}</div>
+      <div class="card-row">${flagIcon()} ${o.dropoff_address}</div>
+      ${o.package_desc ? `<div class="card-row">${boxIcon()} ${o.package_desc}</div>` : ''}
+      ${o.driver_name ? `<div class="card-row">${truckIcon()} ${o.driver_name}</div>` : ''}
+      <div class="flex-between mt-2">
+        <span class="text-sm text-muted">₱${o.total_amount.toFixed(2)}</span>
+        ${isAdmin && o.status === 'pending' ? `
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-sm btn-primary" onclick="openAssignModal(${o.id})">Assign Driver</button>
+            <button class="btn btn-sm btn-success" onclick="autoAssign(${o.id})">Auto-assign</button>
+          </div>
+        ` : ''}
+        ${!isAdmin && o.status !== 'delivered' && o.status !== 'cancelled' ? `
+          <button class="btn btn-sm btn-danger" onclick="cancelOrder(${o.id})">Cancel</button>
+        ` : ''}
+      </div>
+    </div>
+  `;
+}
+
+// ── DELIVERY CARD ─────────────────────────────────────────────
+function deliveryCard(d, showActions=false) {
+  const nextStatus = {
+    'assigned': 'picked_up', 'picked_up': 'in_transit', 'in_transit': 'delivered'
+  }[d.status];
+  const label = { picked_up: '📦 Picked Up', in_transit: '🚚 In Transit', delivered: '✅ Delivered' };
+  return `
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Delivery #${d.id}</div>
+          <div class="card-sub">Order #${d.order_id}</div>
+        </div>
+        <span class="badge badge-${d.status}">${d.status.replace('_',' ')}</span>
+      </div>
+      ${d.assigned_at ? `<div class="card-row">📋 Assigned: ${fmtDate(d.assigned_at)}</div>` : ''}
+      ${d.delivered_at ? `<div class="card-row">✅ Delivered: ${fmtDate(d.delivered_at)}</div>` : ''}
+      ${nextStatus && showActions ? `
+        <button class="btn btn-primary mt-2" onclick="openStatusModal(${d.id}, '${nextStatus}')">
+          Mark as ${label[nextStatus]}
+        </button>
+      ` : ''}
+    </div>
+  `;
+}
+
+// ── MODALS ─────────────────────────────────────────────────
+async function openAssignModal(orderId) {
+  modalData = { orderId };
+  const drivers = await api('GET', '/drivers');
+  const available = drivers.filter(d => d.availability_status === 'available');
+  document.getElementById('assignDriverList').innerHTML = available.length === 0
+    ? '<p class="text-muted">No available drivers</p>'
+    : available.map(d => `
+        <button class="btn btn-outline" style="margin-bottom:8px;text-align:left;padding:12px"
+          onclick="assignDriver(${orderId}, ${d.id})">
+          🚚 ${d.name} · ${d.vehicle_type} · ${d.total_deliveries} deliveries
+        </button>
+      `).join('');
+  document.getElementById('assignModal').classList.add('open');
+}
+
+async function assignDriver(orderId, driverId) {
+  try {
+    await api('POST', '/deliveries/assign', { order_id: orderId, driver_id: driverId });
+    toast('Driver assigned!', 'success');
+    closeModal();
+    loadOrders();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function autoAssign(orderId) {
+  try {
+    const r = await api('GET', `/admin/auto-assign/${orderId}`);
+    toast(r.message, 'success');
+    loadOrders();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function openStatusModal(deliveryId, nextStatus) {
+  modalData = { deliveryId, nextStatus };
+  const labels = { picked_up: 'Mark as Picked Up', in_transit: 'Mark as In Transit', delivered: 'Mark as Delivered' };
+  document.getElementById('statusOptions').innerHTML = `
+    <p class="text-muted text-sm" style="margin-bottom:16px">
+      Update delivery #${deliveryId} to: <strong>${nextStatus.replace('_',' ')}</strong>
+    </p>
+    <input class="form-input" id="driverNotes" placeholder="Driver notes (optional)" style="margin-bottom:12px">
+    <button class="btn btn-primary" onclick="doUpdateStatus()">✓ ${labels[nextStatus]}</button>
+  `;
+  document.getElementById('statusModal').classList.add('open');
+}
+
+async function doUpdateStatus() {
+  try {
+    await api('PATCH', `/deliveries/${modalData.deliveryId}/status`, {
+      new_status: modalData.nextStatus,
+      driver_notes: document.getElementById('driverNotes').value || null,
+    });
+    toast('Status updated!', 'success');
+    closeModal();
+    loadPage(currentPage);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function cancelOrder(orderId) {
+  if (!confirm(`Cancel order #${orderId}?`)) return;
+  try {
+    await api('DELETE', `/orders/${orderId}`);
+    toast('Order cancelled', 'success');
+    loadOrders();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function closeModal() {
+  document.querySelectorAll('.modal-backdrop').forEach(m => m.classList.remove('open'));
+}
+
+// ── Helpers ──────────────────────────────────────────────────
+function fmtDate(dt) {
+  if (!dt) return '';
+  return new Date(dt).toLocaleString('en-PH', { month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit' });
+}
+function roleEmoji(r) { return {admin:'⚙️', driver:'🚚', customer:'👤'}[r] || '👤'; }
+function homeIcon() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`; }
+function boxIcon() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>`; }
+function plusIcon() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>`; }
+function userIcon() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`; }
+function chartIcon() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`; }
+function pinIcon() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>`; }
+function flagIcon() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>`; }
+function truckIcon() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>`; }
+
+// ── Boot ─────────────────────────────────────────────────────
+if (authToken && currentUser) initApp();
+</script>
+</body>
+</html>

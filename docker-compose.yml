@@ -1,0 +1,54 @@
+services:
+  # ── Oracle XE Database ───────────────────────────────────────
+  oracle-db:
+    image: gvenzl/oracle-xe:21-slim
+    container_name: dms_oracle
+    shm_size: 1gb          # Oracle needs large shared memory
+    environment:
+      ORACLE_PASSWORD: OraclePass123
+      ORACLE_CHARACTERSET: AL32UTF8
+    ports:
+      - "1521:1521"
+    volumes:
+      - oracle_data:/opt/oracle/oradata
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 30s
+      timeout: 20s
+      retries: 15
+      start_period: 180s
+    networks:
+      - dms-net
+
+  # ── FastAPI Backend ──────────────────────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: dms_backend
+    environment:
+      ORACLE_USER: delivery_user
+      ORACLE_PASSWORD: OraclePass123
+      ORACLE_DSN: oracle-db:1521/XEPDB1
+      SECRET_KEY: "change-this-in-production-256bit-key"
+      DEBUG: "false"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./frontend:/app/frontend:ro
+    depends_on:
+      oracle-db:
+        condition: service_healthy
+    networks:
+      - dms-net
+    restart: unless-stopped
+
+volumes:
+  oracle_data:
+    name: dms_oracle_data
+
+networks:
+  dms-net:
+    name: dms_network
+    driver: bridge
