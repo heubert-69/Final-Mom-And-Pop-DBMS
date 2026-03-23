@@ -1,4 +1,4 @@
-# 🚚 DeliverPH — Oracle-Backed Delivery Management System
+# 🚚 Mom And Pop Delivery Database Management System (Renamed as "DeliveryPH")
 
 A complete, production-ready delivery management system using **Oracle XE**, **FastAPI**, and a **mobile-first web UI**. Supports customers, drivers, and admins with full order lifecycle tracking.
 
