@@ -1,0 +1,13 @@
+fastapi==0.111.0
+uvicorn[standard]==0.30.0
+oracledb==2.3.0
+python-jose[cryptography]==3.3.0
+bcrypt==4.1.3
+python-multipart==0.0.9
+pydantic==2.7.1
+pydantic-settings==2.3.0
+python-dotenv==1.0.1
+typer==0.12.3
+rich==13.7.1
+httpx==0.27.0
+aiofiles==23.2.1
