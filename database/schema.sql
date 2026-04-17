@@ -199,9 +199,7 @@ END;
 -- password: 'admin123' (bcrypt hash - populated by backend init)
 -- ============================================================
 
-INSERT INTO users (name, email, password_hash, role)
-VALUES ('System Admin', 'admin@delivery.com',
-        '$2b$12$placeholder_will_be_set_by_init', 'admin');
+
 
 COMMIT;
 

@@ -16,36 +16,53 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s  %(levelname)s  %(me
 logger = logging.getLogger(__name__)
 
 
-async def _init_admin():
-    """Replace the placeholder password hash on the seeded admin account."""
+def _init_admin():
+    """Ensure admin exists and has a valid bcrypt hash."""
     try:
-        async with get_connection() as conn:
-            cursor = conn.cursor()
-            # cursor methods ARE async — must await them
-            await cursor.execute(
-                "SELECT id, password_hash FROM users WHERE email = 'admin@delivery.com'"
-            )
-            row = await cursor.fetchone()
-            if row and "placeholder" in (row[1] or ""):
-                await cursor.execute(
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "SELECT id, password_hash FROM users WHERE email = 'admin@delivery.com'"
+        )
+        row = cursor.fetchone()
+
+        if row:
+            # Fix placeholder hash
+            if row[1] and "placeholder" in row[1]:
+                cursor.execute(
                     "UPDATE users SET password_hash = :1 WHERE email = 'admin@delivery.com'",
                     [hash_password("admin123")],
                 )
-                await conn.commit()
-                logger.info("Admin password initialised — login: admin@delivery.com / admin123")
-            cursor.close()   # sync — no await
+                conn.commit()
+                logger.info("Admin password fixed — login: admin@delivery.com / admin123")
+        else:
+            # Create admin if missing
+            cursor.execute(
+                """
+                INSERT INTO users (name, email, password_hash, role)
+                VALUES (:1, :2, :3, 'admin')
+                """,
+                ("System Admin", "admin@delivery.com", hash_password("admin123")),
+            )
+            conn.commit()
+            logger.info("Admin created — login: admin@delivery.com / admin123")
+
+        cursor.close()
+        conn.close()
+
     except Exception as e:
-        logger.warning(f"_init_admin skipped: {e}")
+        logger.warning(f"_init_admin failed: {e}")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Connecting to Oracle …")
-    create_pool()   # sync — no await
-    await _init_admin()
+    create_pool()   # sync
+    _init_admin()   # sync call (no await)
     logger.info("Oracle connection pool ready ✓")
     yield
-    await close_pool()
+    close_pool()    # sync
     logger.info("Oracle pool closed")
 
 
@@ -72,6 +89,7 @@ app.include_router(admin_router,      prefix="/api")
 
 _frontend = os.environ.get("FRONTEND_PATH", "/app/frontend")
 logger.info(f"Frontend path: {_frontend} — exists: {os.path.isdir(_frontend)}")
+
 if os.path.isdir(_frontend):
     app.mount("/static", StaticFiles(directory=_frontend), name="static")
 
